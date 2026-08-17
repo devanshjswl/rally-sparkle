@@ -11,6 +11,13 @@ import {
   BarChart3,
   ArrowRight,
   ShieldCheck,
+  Mail,
+  Phone,
+  MapPin,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Github,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +99,7 @@ export default function Landing() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link to="/register">
-                  Book Appointment Now <ArrowRight className="ml-1 h-4 w-4" />
+                  Get a digital token <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -163,10 +170,74 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted-foreground">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p>AarogyaAI · City General Hospital, Pune — demo data, no real patient records.</p>
-          <p>Smart India Hackathon prototype</p>
+      <footer className="border-t border-border bg-muted/30">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+                  <HeartPulse className="h-5 w-5" />
+                </span>
+                <span className="font-display text-lg font-bold">
+                  Aarogya<span className="text-primary">AI</span>
+                </span>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                AI-based smart hospital management system — digital tokens, live queues and OPD forecasting.
+              </p>
+            </div>
+
+            {/* Quick links */}
+            <div>
+              <h4 className="font-display text-sm font-semibold">Quick Links</h4>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/" className="hover:text-primary">Home</Link></li>
+                <li><Link to="/login?role=admin" className="hover:text-primary">Staff/Admin Login</Link></li>
+                <li><Link to="/register" className="hover:text-primary">Patient Register</Link></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="font-display text-sm font-semibold">Contact</h4>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> contact@aarogyaai.com
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" /> +91 98765 43210
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Pune, Maharashtra
+                </li>
+              </ul>
+            </div>
+
+            {/* Social */}
+            <div>
+              <h4 className="font-display text-sm font-semibold">Follow Us</h4>
+              <div className="mt-3 flex items-center gap-3">
+                <a href="#" aria-label="Instagram" className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary">
+                  <Instagram className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="Twitter" className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary">
+                  <Twitter className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="LinkedIn" className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="GitHub" className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary">
+                  <Github className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <p>AarogyaAI · City General Hospital, Pune — demo data, no real patient records.</p>
+            <p>Smart India Hackathon prototype</p>
+          </div>
         </div>
       </footer>
     </div>
