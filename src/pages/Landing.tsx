@@ -55,10 +55,10 @@ export default function Landing() {
           <nav className="ml-auto flex items-center gap-2">
   <ThemeToggle />
   <Button asChild variant="ghost" size="sm">
-    <Link to="/login">Sign in</Link>
+    <Link to="/login?role=admin">Staff/Admin Login</Link>
   </Button>
   <Button asChild size="sm">
-    <Link to="/register">Register as patient</Link>
+    <Link to="/register">Patient Register</Link>
   </Button>
 </nav>
         </div>
