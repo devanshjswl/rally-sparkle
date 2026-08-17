@@ -11,6 +11,8 @@ import { RequireRole, RoleHome } from "@/components/hospital/RequireRole";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import AIInsights from "./pages/AIInsights";
 import EmergencyBoard from "./pages/shared/EmergencyBoard";
@@ -61,6 +63,8 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/app" element={<RoleHome />} />
 
               {/* Patient */}
