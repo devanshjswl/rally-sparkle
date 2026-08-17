@@ -50,7 +50,7 @@ export default function Landing() {
   return (
     <div className="min-h-svh bg-background">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+        <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <HeartPulse className="h-5 w-5" />
@@ -59,7 +59,8 @@ export default function Landing() {
               Aarogya<span className="text-primary">AI</span>
             </span>
           </Link>
-          <nav className="ml-auto flex items-center gap-2">
+
+          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 md:flex">
             <Link to="/" className="px-3 text-sm font-medium text-foreground">
               Home
             </Link>
@@ -69,6 +70,9 @@ export default function Landing() {
             <Link to="/contact" className="px-3 text-sm text-muted-foreground hover:text-foreground">
               Contact Us
             </Link>
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
               <Link to="/login?role=admin">Staff/Admin Login</Link>
@@ -76,7 +80,7 @@ export default function Landing() {
             <Button asChild size="sm">
               <Link to="/register">Patient Register</Link>
             </Button>
-          </nav>
+          </div>
         </div>
       </header>
 
