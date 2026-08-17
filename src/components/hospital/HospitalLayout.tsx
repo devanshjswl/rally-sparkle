@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -160,10 +161,17 @@ function HospitalSidebar() {
                   {user.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{ROLE_LABEL[user.role]}</p>
-              </div>
+              <div className="ml-auto flex items-center gap-2">
+  {user && (
+    <Badge variant="outline" className="hidden text-[11px] sm:inline-flex">
+      {ROLE_LABEL[user.role]} view
+    </Badge>
+  )}
+  <ThemeToggle />
+  <Avatar className="h-8 w-8">
+    ...
+  </Avatar>
+</div>
             </div>
             <Button
               variant="ghost"
