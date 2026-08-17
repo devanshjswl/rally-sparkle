@@ -50,8 +50,8 @@ export default function Landing() {
   return (
     <div className="min-h-svh bg-background">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
-          <Link to="/" className="flex items-center gap-2 justify-self-start">
+        <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+          <Link to="/" className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <HeartPulse className="h-5 w-5" />
             </span>
@@ -60,7 +60,7 @@ export default function Landing() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-2 justify-self-center md:flex">
+          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap md:flex">
             <Link to="/" className="px-3 text-sm font-medium text-foreground">
               Home
             </Link>
@@ -72,7 +72,7 @@ export default function Landing() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 justify-self-end">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
               <Link to="/login?role=admin">Staff/Admin Login</Link>
