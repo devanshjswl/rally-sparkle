@@ -53,13 +53,14 @@ export default function Landing() {
             </span>
           </Link>
           <nav className="ml-auto flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/login">Sign in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/register">Register as patient</Link>
-            </Button>
-          </nav>
+  <ThemeToggle />
+  <Button asChild variant="ghost" size="sm">
+    <Link to="/login">Sign in</Link>
+  </Button>
+  <Button asChild size="sm">
+    <Link to="/register">Register as patient</Link>
+  </Button>
+</nav>
         </div>
       </header>
 
