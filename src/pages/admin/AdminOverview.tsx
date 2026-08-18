@@ -11,18 +11,19 @@ import {
   Reveal,
   StatCard,
 } from "@/components/hospital/primitives";
-import { useAppointments, useDepartments, useDoctors, useEmergencies, useHospitalStats } from "@/hooks/useHospital";
-import { opdCrowdForecast, today } from "@/lib/hospital/api";
+import { useAppointments, useDepartments, useDoctors, useEmergencies, useHospitalStats, useOpdCrowdForecast } from "@/hooks/useHospital";
+import { today } from "@/lib/hospital/api";
 import { predictCrowd, predictWorkload } from "@/lib/hospital/ai";
 
 export default function AdminOverview() {
   const { data: stats } = useHospitalStats();
   const { data: departments } = useDepartments();
   const { data: doctors } = useDoctors();
+  const { data: opdCrowdForecast } = useOpdCrowdForecast();
   const { data: appointments } = useAppointments({ date: today });
   const { data: emergencies } = useEmergencies();
 
-  const crowd = predictCrowd(opdCrowdForecast);
+  const crowd = opdCrowdForecast ? predictCrowd(opdCrowdForecast) : null;
   const busiest =
     doctors && appointments
       ? doctors
@@ -71,12 +72,14 @@ export default function AdminOverview() {
         </Card>
 
         <div className="space-y-4">
-          <AIPredictionCard
-            title="OPD crowd prediction"
-            prediction={crowd}
-            primary={`Peak ${crowd.value.peakHour}`}
-            footer={<p className="text-xs text-muted-foreground">Plan extra counters before the peak; {crowd.value.quietHour} is the quietest window.</p>}
-          />
+          {crowd && (
+            <AIPredictionCard
+              title="OPD crowd prediction"
+              prediction={crowd}
+              primary={`Peak ${crowd.value.peakHour}`}
+              footer={<p className="text-xs text-muted-foreground">Plan extra counters before the peak; {crowd.value.quietHour} is the quietest window.</p>}
+            />
+          )}
           <Card>
             <CardHeader><CardTitle className="text-base">Highest workload</CardTitle></CardHeader>
             <CardContent className="space-y-3">
