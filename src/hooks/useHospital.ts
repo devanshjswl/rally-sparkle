@@ -39,6 +39,12 @@ export const useEmergencies = () =>
 export const useHospitalStats = () =>
   useQuery({ queryKey: hospitalKeys.stats, queryFn: api.getHospitalStats, refetchInterval: 30000 });
 
+export const useOpdCrowdForecast = () =>
+  useQuery({ queryKey: ["hospital", "opdCrowdForecast"], queryFn: api.getOpdCrowdForecast, refetchInterval: 60000 });
+
+export const useWeeklyFootfall = () =>
+  useQuery({ queryKey: ["hospital", "weeklyFootfall"], queryFn: api.getWeeklyFootfall });
+
 export const useAvailableSlots = (doctorId?: string, date?: string) =>
   useQuery({
     queryKey: hospitalKeys.slots(doctorId ?? "none", date ?? "none"),
