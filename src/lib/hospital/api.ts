@@ -1,12 +1,12 @@
 /**
  * Single data-access boundary for the hospital app.
  *
- * Everything the UI needs goes through these functions. Today they resolve
- * against in-memory mock data; to move to a real backend, replace each function
- * body with a fetch / Lovable Cloud query — the signatures and return shapes
- * are the contract the UI depends on.
+ * Every screen goes through these functions (via src/hooks/useHospital.ts).
+ * They talk to the real `hospital_*` tables in Supabase — no in-memory mock
+ * data. Row Level Security enforces who can read/write what; see
+ * supabase/migrations/20260817120000_hospital_schema.sql.
  */
-import * as mock from "./mock";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   Appointment,
   Department,
@@ -17,25 +17,82 @@ import type {
   QueueEntry,
 } from "./types";
 
-const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
-const delay = (ms = 180) => new Promise((r) => setTimeout(r, ms));
+export const today = new Date().toISOString().slice(0, 10);
 
-/** Mutable in-memory tables (stand-in for database tables). */
-const db = {
-  departments: clone(mock.departments),
-  doctors: clone(mock.doctors),
-  patients: clone(mock.patients),
-  appointments: clone(mock.appointments),
-  emergencies: clone(mock.emergencyCases),
-};
+/* ------------------------------- mappers ---------------------------------- */
 
-export const today = mock.today;
+const toDepartment = (r: any): Department => ({
+  id: r.id,
+  name: r.name,
+  description: r.description ?? "",
+  icon: r.icon ?? "Stethoscope",
+  openFrom: r.open_from,
+  openTo: r.open_to,
+  rooms: r.rooms,
+  load: r.load,
+});
 
-/* ---------------------------------- reads --------------------------------- */
+const toDoctor = (r: any): Doctor => ({
+  id: r.id,
+  name: r.name,
+  departmentId: r.department_id,
+  specialization: r.specialization ?? "",
+  qualification: r.qualification ?? "",
+  experienceYears: r.experience_years,
+  rating: Number(r.rating),
+  fee: r.fee,
+  room: r.room ?? "",
+  available: r.available,
+  days: r.days ?? [],
+  slotStart: r.slot_start,
+  slotEnd: r.slot_end,
+  avgConsultMinutes: r.avg_consult_minutes,
+});
+
+const toPatient = (r: any): Patient => ({
+  id: r.id,
+  name: r.name,
+  age: r.age ?? 0,
+  gender: (r.gender ?? "Other") as Patient["gender"],
+  phone: r.phone ?? "",
+  bloodGroup: r.blood_group ?? "",
+  uhid: r.uhid,
+});
+
+const toAppointment = (r: any): Appointment => ({
+  id: r.id,
+  tokenNumber: r.token_number,
+  patientId: r.patient_id,
+  patientName: r.patient_name,
+  doctorId: r.doctor_id,
+  departmentId: r.department_id,
+  date: r.date,
+  slot: r.slot,
+  reason: r.reason ?? "",
+  status: r.status,
+  priority: r.priority,
+  predictedWait: r.predicted_wait,
+  createdAt: r.created_at,
+});
+
+const toEmergency = (r: any): EmergencyCase => ({
+  id: r.id,
+  patientName: r.patient_name,
+  age: r.age ?? 0,
+  condition: r.condition ?? "",
+  triage: r.triage,
+  arrivedAt: r.arrived_at,
+  departmentId: r.department_id,
+  assignedDoctorId: r.assigned_doctor_id ?? undefined,
+  status: r.status,
+});
+
+/* ---------------------------------- reads ---------------------------------- */
 
 export async function listDepartments(): Promise<Department[]> {
-  await delay();
-  return clone(db.departments);
+  const { data, error } = await supabase.from("hospital_departments").select("*").order("name");
+  if (error) throw error;
+  return (data ?? []).map(toDepartment);
 }
 
 export async function listDoctors(filters?: {
@@ -43,22 +100,23 @@ export async function listDoctors(filters?: {
   departmentId?: string;
   availableOnly?: boolean;
 }): Promise<Doctor[]> {
-  await delay();
-  const q = filters?.query?.trim().toLowerCase();
-  return clone(
-    db.doctors.filter((d) => {
-      if (filters?.departmentId && d.departmentId !== filters.departmentId) return false;
-      if (filters?.availableOnly && !d.available) return false;
-      if (!q) return true;
-      const dep = db.departments.find((x) => x.id === d.departmentId)?.name ?? "";
-      return `${d.name} ${d.specialization} ${dep}`.toLowerCase().includes(q);
-    }),
-  );
+  let q = supabase.from("hospital_doctors").select("*").order("name");
+  if (filters?.departmentId) q = q.eq("department_id", filters.departmentId);
+  if (filters?.availableOnly) q = q.eq("available", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  let doctors = (data ?? []).map(toDoctor);
+  const query = filters?.query?.trim().toLowerCase();
+  if (query) {
+    doctors = doctors.filter((d) => `${d.name} ${d.specialization}`.toLowerCase().includes(query));
+  }
+  return doctors;
 }
 
 export async function listPatients(): Promise<Patient[]> {
-  await delay();
-  return clone(db.patients);
+  const { data, error } = await supabase.from("hospital_patients").select("*").order("name");
+  if (error) throw error;
+  return (data ?? []).map(toPatient);
 }
 
 export async function listAppointments(filters?: {
@@ -66,59 +124,80 @@ export async function listAppointments(filters?: {
   doctorId?: string;
   date?: string;
 }): Promise<Appointment[]> {
-  await delay();
-  return clone(
-    db.appointments.filter((a) => {
-      if (filters?.patientId && a.patientId !== filters.patientId) return false;
-      if (filters?.doctorId && a.doctorId !== filters.doctorId) return false;
-      if (filters?.date && a.date !== filters.date) return false;
-      return true;
-    }),
-  );
+  let q = supabase.from("hospital_appointments").select("*").order("token_number");
+  if (filters?.patientId) q = q.eq("patient_id", filters.patientId);
+  if (filters?.doctorId) q = q.eq("doctor_id", filters.doctorId);
+  if (filters?.date) q = q.eq("date", filters.date);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []).map(toAppointment);
 }
 
 export async function listEmergencies(): Promise<EmergencyCase[]> {
-  await delay();
-  return clone(db.emergencies);
+  const { data, error } = await supabase
+    .from("hospital_emergencies")
+    .select("*")
+    .order("arrived_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toEmergency);
 }
 
 /** Live queue for one doctor, ordered by priority then token. */
 export async function getDoctorQueue(doctorId: string): Promise<QueueEntry[]> {
-  await delay();
-  const doctor = db.doctors.find((d) => d.id === doctorId);
-  const consult = doctor?.avgConsultMinutes ?? 10;
+  const [{ data: doctorRow }, { data: aptRows, error }] = await Promise.all([
+    supabase.from("hospital_doctors").select("avg_consult_minutes").eq("id", doctorId).maybeSingle(),
+    supabase
+      .from("hospital_appointments")
+      .select("*")
+      .eq("doctor_id", doctorId)
+      .eq("date", today)
+      .not("status", "in", '("cancelled","completed")')
+      .order("token_number"),
+  ]);
+  if (error) throw error;
+
+  const consult = doctorRow?.avg_consult_minutes ?? 10;
   const rank: Record<Priority, number> = { emergency: 0, high: 1, normal: 2 };
-  const queue = db.appointments
-    .filter((a) => a.doctorId === doctorId && a.date === today && a.status !== "cancelled" && a.status !== "completed")
+  const queue = (aptRows ?? [])
+    .map(toAppointment)
     .sort((a, b) => rank[a.priority] - rank[b.priority] || a.tokenNumber - b.tokenNumber);
 
-  return clone(
-    queue.map((appointment, i) => ({
-      appointment,
-      position: i + 1,
-      etaMinutes: appointment.status === "in-consultation" ? 0 : i * consult,
-    })),
-  );
+  return queue.map((appointment, i) => ({
+    appointment,
+    position: i + 1,
+    etaMinutes: appointment.status === "in-consultation" ? 0 : i * consult,
+  }));
 }
 
 export async function getAvailableSlots(doctorId: string, date: string): Promise<string[]> {
-  await delay();
-  const doctor = db.doctors.find((d) => d.id === doctorId);
-  if (!doctor) return [];
-  const taken = db.appointments
-    .filter((a) => a.doctorId === doctorId && a.date === date && a.status !== "cancelled")
-    .map((a) => a.slot);
+  const { data: doctorRow, error: doctorErr } = await supabase
+    .from("hospital_doctors")
+    .select("slot_start, slot_end")
+    .eq("id", doctorId)
+    .maybeSingle();
+  if (doctorErr) throw doctorErr;
+  if (!doctorRow) return [];
+
+  const { data: aptRows, error } = await supabase
+    .from("hospital_appointments")
+    .select("slot")
+    .eq("doctor_id", doctorId)
+    .eq("date", date)
+    .neq("status", "cancelled");
+  if (error) throw error;
+
+  const taken = new Set((aptRows ?? []).map((a) => a.slot));
   const slots: string[] = [];
-  const [sh, sm] = doctor.slotStart.split(":").map(Number);
-  const [eh, em] = doctor.slotEnd.split(":").map(Number);
+  const [sh, sm] = doctorRow.slot_start.split(":").map(Number);
+  const [eh, em] = doctorRow.slot_end.split(":").map(Number);
   for (let m = sh * 60 + sm; m < eh * 60 + em; m += 20) {
     const s = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-    if (!taken.includes(s)) slots.push(s);
+    if (!taken.has(s)) slots.push(s);
   }
   return slots.slice(0, 18);
 }
 
-/* --------------------------------- writes --------------------------------- */
+/* --------------------------------- writes ---------------------------------- */
 
 export async function bookAppointment(input: {
   patientId: string;
@@ -129,126 +208,246 @@ export async function bookAppointment(input: {
   reason: string;
   priority?: Priority;
 }): Promise<Appointment> {
-  await delay(320);
-  const doctor = db.doctors.find((d) => d.id === input.doctorId);
-  if (!doctor) throw new Error("Doctor not found");
-  const sameDay = db.appointments.filter((a) => a.doctorId === input.doctorId && a.date === input.date);
-  const appointment: Appointment = {
-    id: `apt-${Date.now()}`,
-    tokenNumber: sameDay.length ? Math.max(...sameDay.map((a) => a.tokenNumber)) + 1 : 1,
-    patientId: input.patientId,
-    patientName: input.patientName,
-    doctorId: doctor.id,
-    departmentId: doctor.departmentId,
-    date: input.date,
-    slot: input.slot,
-    reason: input.reason,
-    status: "waiting",
-    priority: input.priority ?? "normal",
-    predictedWait: Math.max(5, sameDay.filter((a) => a.status === "waiting").length * doctor.avgConsultMinutes),
-    createdAt: new Date().toISOString(),
-  };
-  db.appointments.push(appointment);
-  return clone(appointment);
+  const { data: doctorRow, error: doctorErr } = await supabase
+    .from("hospital_doctors")
+    .select("id, department_id, avg_consult_minutes")
+    .eq("id", input.doctorId)
+    .maybeSingle();
+  if (doctorErr) throw doctorErr;
+  if (!doctorRow) throw new Error("Doctor not found");
+
+  const { data: sameDay, error: sameDayErr } = await supabase
+    .from("hospital_appointments")
+    .select("token_number, status")
+    .eq("doctor_id", input.doctorId)
+    .eq("date", input.date);
+  if (sameDayErr) throw sameDayErr;
+
+  const tokenNumber = sameDay?.length ? Math.max(...sameDay.map((a) => a.token_number)) + 1 : 1;
+  const waitingAhead = (sameDay ?? []).filter((a) => a.status === "waiting").length;
+
+  const { data, error } = await supabase
+    .from("hospital_appointments")
+    .insert({
+      token_number: tokenNumber,
+      patient_id: input.patientId,
+      patient_name: input.patientName,
+      doctor_id: doctorRow.id,
+      department_id: doctorRow.department_id,
+      date: input.date,
+      slot: input.slot,
+      reason: input.reason,
+      status: "waiting",
+      priority: input.priority ?? "normal",
+      predicted_wait: Math.max(5, waitingAhead * doctorRow.avg_consult_minutes),
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return toAppointment(data);
 }
 
-export async function updateAppointmentStatus(
-  id: string,
-  status: Appointment["status"],
-): Promise<void> {
-  await delay(140);
-  const apt = db.appointments.find((a) => a.id === id);
-  if (apt) apt.status = status;
+export async function updateAppointmentStatus(id: string, status: Appointment["status"]): Promise<void> {
+  const { error } = await supabase.from("hospital_appointments").update({ status }).eq("id", id);
+  if (error) throw error;
 }
 
 export async function callNextPatient(doctorId: string): Promise<Appointment | null> {
-  await delay(200);
-  const current = db.appointments.find(
-    (a) => a.doctorId === doctorId && a.date === today && a.status === "in-consultation",
-  );
-  if (current) current.status = "completed";
+  const { data: current } = await supabase
+    .from("hospital_appointments")
+    .select("id")
+    .eq("doctor_id", doctorId)
+    .eq("date", today)
+    .eq("status", "in-consultation")
+    .maybeSingle();
+  if (current) {
+    await supabase.from("hospital_appointments").update({ status: "completed" }).eq("id", current.id);
+  }
+
   const queue = await getDoctorQueue(doctorId);
   const next = queue.find((q) => q.appointment.status === "waiting");
   if (!next) return null;
-  const target = db.appointments.find((a) => a.id === next.appointment.id);
-  if (target) {
-    target.status = "in-consultation";
-    target.predictedWait = 0;
-    return clone(target);
-  }
-  return null;
+
+  const { data, error } = await supabase
+    .from("hospital_appointments")
+    .update({ status: "in-consultation", predicted_wait: 0 })
+    .eq("id", next.appointment.id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return toAppointment(data);
 }
 
 export async function toggleDoctorAvailability(doctorId: string): Promise<void> {
-  await delay(120);
-  const doc = db.doctors.find((d) => d.id === doctorId);
-  if (doc) doc.available = !doc.available;
+  const { data: doc, error: readErr } = await supabase
+    .from("hospital_doctors")
+    .select("available")
+    .eq("id", doctorId)
+    .maybeSingle();
+  if (readErr) throw readErr;
+  if (!doc) return;
+  const { error } = await supabase
+    .from("hospital_doctors")
+    .update({ available: !doc.available })
+    .eq("id", doctorId);
+  if (error) throw error;
 }
 
 export async function saveDoctor(input: Omit<Doctor, "id"> & { id?: string }): Promise<Doctor> {
-  await delay(240);
+  const row = {
+    name: input.name,
+    department_id: input.departmentId,
+    specialization: input.specialization,
+    qualification: input.qualification,
+    experience_years: input.experienceYears,
+    rating: input.rating,
+    fee: input.fee,
+    room: input.room,
+    available: input.available,
+    days: input.days,
+    slot_start: input.slotStart,
+    slot_end: input.slotEnd,
+    avg_consult_minutes: input.avgConsultMinutes,
+  };
   if (input.id) {
-    const i = db.doctors.findIndex((d) => d.id === input.id);
-    if (i >= 0) db.doctors[i] = { ...db.doctors[i], ...input } as Doctor;
-    return clone(db.doctors[i]);
+    const { data, error } = await supabase
+      .from("hospital_doctors")
+      .update(row)
+      .eq("id", input.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toDoctor(data);
   }
-  const created: Doctor = { ...input, id: `doc-${Date.now()}` };
-  db.doctors.push(created);
-  return clone(created);
+  const { data, error } = await supabase.from("hospital_doctors").insert(row).select("*").single();
+  if (error) throw error;
+  return toDoctor(data);
 }
 
 export async function saveDepartment(input: Omit<Department, "id"> & { id?: string }): Promise<Department> {
-  await delay(240);
-  if (input.id) {
-    const i = db.departments.findIndex((d) => d.id === input.id);
-    if (i >= 0) db.departments[i] = { ...db.departments[i], ...input } as Department;
-    return clone(db.departments[i]);
-  }
-  const created: Department = { ...input, id: `dep-${Date.now()}` };
-  db.departments.push(created);
-  return clone(created);
-}
-
-export async function updateEmergencyStatus(
-  id: string,
-  status: EmergencyCase["status"],
-): Promise<void> {
-  await delay(140);
-  const c = db.emergencies.find((e) => e.id === id);
-  if (c) c.status = status;
-}
-
-export async function registerPatient(input: Omit<Patient, "id" | "uhid">): Promise<Patient> {
-  await delay(300);
-  const created: Patient = {
-    ...input,
-    id: `pat-${Date.now()}`,
-    uhid: `UHID-2026-${String(800 + db.patients.length + 1).padStart(5, "0")}`,
+  const row = {
+    name: input.name,
+    description: input.description,
+    icon: input.icon,
+    open_from: input.openFrom,
+    open_to: input.openTo,
+    rooms: input.rooms,
+    load: input.load,
   };
-  db.patients.push(created);
-  return clone(created);
+  if (input.id) {
+    const { data, error } = await supabase
+      .from("hospital_departments")
+      .update(row)
+      .eq("id", input.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toDepartment(data);
+  }
+  const { data, error } = await supabase.from("hospital_departments").insert(row).select("*").single();
+  if (error) throw error;
+  return toDepartment(data);
 }
 
-/* ------------------------------- analytics -------------------------------- */
+export async function updateEmergencyStatus(id: string, status: EmergencyCase["status"]): Promise<void> {
+  const { error } = await supabase.from("hospital_emergencies").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function registerPatient(input: Omit<Patient, "id" | "uhid">, profileId?: string): Promise<Patient> {
+  const uhid = `UHID-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 89999))}`;
+  const { data, error } = await supabase
+    .from("hospital_patients")
+    .insert({
+      profile_id: profileId ?? null,
+      name: input.name,
+      age: input.age,
+      gender: input.gender,
+      phone: input.phone,
+      blood_group: input.bloodGroup,
+      uhid,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return toPatient(data);
+}
+
+/* ------------------------------- analytics --------------------------------- */
 
 export async function getHospitalStats() {
-  await delay();
-  const todays = db.appointments.filter((a) => a.date === today);
+  const [{ data: todays, error: aptErr }, { data: emergencies, error: emErr }, { data: doctors, error: docErr }, { data: departments, error: depErr }] =
+    await Promise.all([
+      supabase.from("hospital_appointments").select("status, predicted_wait").eq("date", today),
+      supabase.from("hospital_emergencies").select("status"),
+      supabase.from("hospital_doctors").select("available"),
+      supabase.from("hospital_departments").select("id"),
+    ]);
+  if (aptErr) throw aptErr;
+  if (emErr) throw emErr;
+  if (docErr) throw docErr;
+  if (depErr) throw depErr;
+
+  const rows = todays ?? [];
+  const waiting = rows.filter((a) => a.status === "waiting");
   return {
-    appointmentsToday: todays.length,
-    waiting: todays.filter((a) => a.status === "waiting").length,
-    inConsultation: todays.filter((a) => a.status === "in-consultation").length,
-    completed: todays.filter((a) => a.status === "completed").length,
-    activeEmergencies: db.emergencies.filter((e) => e.status !== "stabilised").length,
-    doctorsOnDuty: db.doctors.filter((d) => d.available).length,
-    totalDoctors: db.doctors.length,
-    departments: db.departments.length,
+    appointmentsToday: rows.length,
+    waiting: waiting.length,
+    inConsultation: rows.filter((a) => a.status === "in-consultation").length,
+    completed: rows.filter((a) => a.status === "completed").length,
+    activeEmergencies: (emergencies ?? []).filter((e) => e.status !== "stabilised").length,
+    doctorsOnDuty: (doctors ?? []).filter((d) => d.available).length,
+    totalDoctors: (doctors ?? []).length,
+    departments: (departments ?? []).length,
     avgWait: Math.round(
-      todays.filter((a) => a.status === "waiting").reduce((s, a) => s + a.predictedWait, 0) /
-        Math.max(1, todays.filter((a) => a.status === "waiting").length),
+      waiting.reduce((s, a) => s + (a.predicted_wait ?? 0), 0) / Math.max(1, waiting.length),
     ),
   };
 }
 
-export const opdCrowdForecast = mock.opdCrowdForecast;
-export const weeklyFootfall = mock.weeklyFootfall;
+/** Hourly OPD load for today, actual counts for past hours + a simple forecast for future ones. */
+export async function getOpdCrowdForecast(): Promise<{ hour: string; actual: number | null; predicted: number }[]> {
+  const { data, error } = await supabase
+    .from("hospital_appointments")
+    .select("slot, status")
+    .eq("date", today);
+  if (error) throw error;
+
+  const byHour = new Map<number, number>();
+  for (const a of data ?? []) {
+    const hour = Number(a.slot.split(":")[0]);
+    byHour.set(hour, (byHour.get(hour) ?? 0) + 1);
+  }
+  const nowHour = new Date().getHours();
+  const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+  const values = hours.map((h) => byHour.get(h) ?? 0);
+  const avg = values.reduce((s, v) => s + v, 0) / Math.max(1, values.filter((v) => v > 0).length || 1);
+
+  return hours.map((h) => ({
+    hour: `${String(h).padStart(2, "0")}:00`,
+    actual: h <= nowHour ? byHour.get(h) ?? 0 : null,
+    predicted: byHour.get(h) ?? Math.round(avg),
+  }));
+}
+
+/** Booked + emergency counts per weekday, for the current week so far. */
+export async function getWeeklyFootfall(): Promise<{ day: string; opd: number; emergency: number }[]> {
+  const start = new Date();
+  start.setDate(start.getDate() - start.getDay());
+  const startStr = start.toISOString().slice(0, 10);
+
+  const [{ data: appts, error: aptErr }, { data: emg, error: emErr }] = await Promise.all([
+    supabase.from("hospital_appointments").select("date").gte("date", startStr),
+    supabase.from("hospital_emergencies").select("arrived_at").gte("arrived_at", startStr),
+  ]);
+  if (aptErr) throw aptErr;
+  if (emErr) throw emErr;
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const opdByDay = new Array(7).fill(0);
+  const emgByDay = new Array(7).fill(0);
+  for (const a of appts ?? []) opdByDay[new Date(a.date).getDay()]++;
+  for (const e of emg ?? []) emgByDay[new Date(e.arrived_at).getDay()]++;
+
+  return days.map((day, i) => ({ day, opd: opdByDay[i], emergency: emgByDay[i] }));
+}
