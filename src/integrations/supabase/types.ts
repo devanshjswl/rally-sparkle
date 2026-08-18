@@ -536,6 +536,306 @@ export type Database = {
           },
         ]
       }
+      hospital_appointments: {
+        Row: {
+          created_at: string
+          date: string
+          department_id: string | null
+          doctor_id: string | null
+          id: string
+          patient_id: string | null
+          patient_name: string
+          predicted_wait: number
+          priority: Database["public"]["Enums"]["hospital_priority"]
+          reason: string | null
+          slot: string
+          status: Database["public"]["Enums"]["hospital_appointment_status"]
+          token_number: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          department_id?: string | null
+          doctor_id?: string | null
+          id?: string
+          patient_id?: string | null
+          patient_name: string
+          predicted_wait?: number
+          priority?: Database["public"]["Enums"]["hospital_priority"]
+          reason?: string | null
+          slot: string
+          status?: Database["public"]["Enums"]["hospital_appointment_status"]
+          token_number: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          department_id?: string | null
+          doctor_id?: string | null
+          id?: string
+          patient_id?: string | null
+          patient_name?: string
+          predicted_wait?: number
+          priority?: Database["public"]["Enums"]["hospital_priority"]
+          reason?: string | null
+          slot?: string
+          status?: Database["public"]["Enums"]["hospital_appointment_status"]
+          token_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_appointments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_departments: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          load: number
+          name: string
+          open_from: string
+          open_to: string
+          rooms: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          load?: number
+          name: string
+          open_from?: string
+          open_to?: string
+          rooms?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          load?: number
+          name?: string
+          open_from?: string
+          open_to?: string
+          rooms?: number
+        }
+        Relationships: []
+      }
+      hospital_doctors: {
+        Row: {
+          available: boolean
+          avg_consult_minutes: number
+          created_at: string
+          days: string[]
+          department_id: string | null
+          experience_years: number
+          fee: number
+          id: string
+          name: string
+          qualification: string | null
+          rating: number
+          room: string | null
+          slot_end: string
+          slot_start: string
+          specialization: string | null
+        }
+        Insert: {
+          available?: boolean
+          avg_consult_minutes?: number
+          created_at?: string
+          days?: string[]
+          department_id?: string | null
+          experience_years?: number
+          fee?: number
+          id?: string
+          name: string
+          qualification?: string | null
+          rating?: number
+          room?: string | null
+          slot_end?: string
+          slot_start?: string
+          specialization?: string | null
+        }
+        Update: {
+          available?: boolean
+          avg_consult_minutes?: number
+          created_at?: string
+          days?: string[]
+          department_id?: string | null
+          experience_years?: number
+          fee?: number
+          id?: string
+          name?: string
+          qualification?: string | null
+          rating?: number
+          room?: string | null
+          slot_end?: string
+          slot_start?: string
+          specialization?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_doctors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_emergencies: {
+        Row: {
+          age: number | null
+          arrived_at: string
+          assigned_doctor_id: string | null
+          condition: string | null
+          department_id: string | null
+          id: string
+          patient_name: string
+          status: Database["public"]["Enums"]["hospital_emergency_status"]
+          triage: Database["public"]["Enums"]["hospital_triage"]
+        }
+        Insert: {
+          age?: number | null
+          arrived_at?: string
+          assigned_doctor_id?: string | null
+          condition?: string | null
+          department_id?: string | null
+          id?: string
+          patient_name: string
+          status?: Database["public"]["Enums"]["hospital_emergency_status"]
+          triage?: Database["public"]["Enums"]["hospital_triage"]
+        }
+        Update: {
+          age?: number | null
+          arrived_at?: string
+          assigned_doctor_id?: string | null
+          condition?: string | null
+          department_id?: string | null
+          id?: string
+          patient_name?: string
+          status?: Database["public"]["Enums"]["hospital_emergency_status"]
+          triage?: Database["public"]["Enums"]["hospital_triage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_emergencies_assigned_doctor_id_fkey"
+            columns: ["assigned_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_emergencies_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_patients: {
+        Row: {
+          age: number | null
+          blood_group: string | null
+          created_at: string
+          gender: string | null
+          id: string
+          name: string
+          phone: string | null
+          profile_id: string | null
+          uhid: string
+        }
+        Insert: {
+          age?: number | null
+          blood_group?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          profile_id?: string | null
+          uhid: string
+        }
+        Update: {
+          age?: number | null
+          blood_group?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          profile_id?: string | null
+          uhid?: string
+        }
+        Relationships: []
+      }
+      hospital_profiles: {
+        Row: {
+          created_at: string
+          doctor_id: string | null
+          email: string
+          id: string
+          name: string
+          patient_id: string | null
+          role: Database["public"]["Enums"]["hospital_role"]
+        }
+        Insert: {
+          created_at?: string
+          doctor_id?: string | null
+          email: string
+          id: string
+          name: string
+          patient_id?: string | null
+          role?: Database["public"]["Enums"]["hospital_role"]
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string | null
+          email?: string
+          id?: string
+          name?: string
+          patient_id?: string | null
+          role?: Database["public"]["Enums"]["hospital_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_profiles_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_profiles_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       image_generation_jobs: {
         Row: {
           count: number
@@ -900,6 +1200,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      hospital_current_doctor_id: { Args: never; Returns: string }
+      hospital_current_patient_id: { Args: never; Returns: string }
+      hospital_current_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["hospital_role"]
+      }
       increment_link_click: { Args: { p_link_id: string }; Returns: undefined }
       move_to_dlq: {
         Args: {
@@ -937,6 +1243,15 @@ export type Database = {
       cohost_scope: "account" | "event"
       email_template_type: "confirmation" | "reminder" | "followup"
       event_status: "draft" | "live" | "past"
+      hospital_appointment_status:
+        | "waiting"
+        | "in-consultation"
+        | "completed"
+        | "cancelled"
+      hospital_emergency_status: "incoming" | "in-treatment" | "stabilised"
+      hospital_priority: "emergency" | "high" | "normal"
+      hospital_role: "patient" | "doctor" | "admin"
+      hospital_triage: "Red" | "Yellow" | "Green"
       registration_status:
         | "registered"
         | "checked_in"
@@ -1076,6 +1391,16 @@ export const Constants = {
       cohost_scope: ["account", "event"],
       email_template_type: ["confirmation", "reminder", "followup"],
       event_status: ["draft", "live", "past"],
+      hospital_appointment_status: [
+        "waiting",
+        "in-consultation",
+        "completed",
+        "cancelled",
+      ],
+      hospital_emergency_status: ["incoming", "in-treatment", "stabilised"],
+      hospital_priority: ["emergency", "high", "normal"],
+      hospital_role: ["patient", "doctor", "admin"],
+      hospital_triage: ["Red", "Yellow", "Green"],
       registration_status: [
         "registered",
         "checked_in",
