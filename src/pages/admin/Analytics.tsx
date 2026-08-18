@@ -15,8 +15,7 @@ import { CalendarClock, Clock, Siren, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader, Reveal, StatCard } from "@/components/hospital/primitives";
-import { useAppointments, useDepartments, useDoctors, useHospitalStats } from "@/hooks/useHospital";
-import { weeklyFootfall } from "@/lib/hospital/api";
+import { useAppointments, useDepartments, useDoctors, useHospitalStats, useWeeklyFootfall } from "@/hooks/useHospital";
 
 const tooltipStyle = {
   background: "hsl(var(--popover))",
@@ -32,6 +31,7 @@ export default function Analytics() {
   const { data: appointments } = useAppointments();
   const { data: departments } = useDepartments();
   const { data: doctors } = useDoctors();
+  const { data: weeklyFootfall = [] } = useWeeklyFootfall();
 
   const byDepartment = (departments ?? []).map((d) => ({
     name: d.name,
