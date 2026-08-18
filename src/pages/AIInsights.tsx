@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AIPredictionCard, PageHeader, Reveal } from "@/components/hospital/primitives";
-import { useAppointments, useDoctors } from "@/hooks/useHospital";
-import { opdCrowdForecast, today } from "@/lib/hospital/api";
+import { useAppointments, useDoctors, useOpdCrowdForecast } from "@/hooks/useHospital";
+import { today } from "@/lib/hospital/api";
 import { optimiseAppointments, predictCrowd, predictWorkload } from "@/lib/hospital/ai";
 import { useHospitalAuth } from "@/contexts/HospitalAuthContext";
 
@@ -21,8 +21,9 @@ export default function AIInsights() {
   const { user } = useHospitalAuth();
   const { data: doctors } = useDoctors();
   const { data: appointments } = useAppointments({ date: today });
+  const { data: opdCrowdForecast } = useOpdCrowdForecast();
 
-  const crowd = predictCrowd(opdCrowdForecast);
+  const crowd = opdCrowdForecast ? predictCrowd(opdCrowdForecast) : null;
   const optimisation = doctors && appointments ? optimiseAppointments(appointments, doctors) : null;
   const workloads =
     doctors && appointments
@@ -47,7 +48,7 @@ export default function AIInsights() {
             </CardHeader>
             <CardContent className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={opdCrowdForecast}>
+                <AreaChart data={opdCrowdForecast ?? []}>
                   <defs>
                     <linearGradient id="pred" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
@@ -73,19 +74,21 @@ export default function AIInsights() {
           </Card>
         </Reveal>
 
-        <Reveal delay={0.08}>
-          <AIPredictionCard
-            title="Crowd forecast"
-            prediction={crowd}
-            primary={`Peak ${crowd.value.peakHour}`}
-            footer={
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>Expected peak load: {crowd.value.peakLoad} patients/hour</p>
-                <p>Quietest upcoming hour: {crowd.value.quietHour} — route walk-ins here</p>
-              </div>
-            }
-          />
-        </Reveal>
+        {crowd && (
+          <Reveal delay={0.08}>
+            <AIPredictionCard
+              title="Crowd forecast"
+              prediction={crowd}
+              primary={`Peak ${crowd.value.peakHour}`}
+              footer={
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <p>Expected peak load: {crowd.value.peakLoad} patients/hour</p>
+                  <p>Quietest upcoming hour: {crowd.value.quietHour} — route walk-ins here</p>
+                </div>
+              }
+            />
+          </Reveal>
+        )}
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
