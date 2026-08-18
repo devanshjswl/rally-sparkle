@@ -1,29 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { HeartPulse, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { homeForRole, useHospitalAuth } from "@/contexts/HospitalAuthContext";
-import type { Role } from "@/lib/hospital/types";
 import { ease } from "@/components/hospital/primitives";
 
-const DEMO: Record<Role, { email: string; hint: string }> = {
-  patient: { email: "patient@hospital.in", hint: "Books appointments, holds a digital token, tracks the queue." },
-  doctor: { email: "doctor@hospital.in", hint: "Runs the OPD queue and sees workload insights." },
-  admin: { email: "admin@hospital.in", hint: "Manages doctors, departments, emergencies and analytics." },
-};
-
 export default function Login() {
-  const [params] = useSearchParams();
-  const initial = (params.get("role") as Role) || "patient";
-  const [role, setRole] = useState<Role>(["patient", "doctor", "admin"].includes(initial) ? initial : "patient");
-  const [email, setEmail] = useState(DEMO[initial as Role]?.email ?? DEMO.patient.email);
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const { signIn } = useHospitalAuth();
   const navigate = useNavigate();
@@ -32,9 +21,11 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     try {
-      const user = await signIn(role, email);
+      const user = await signIn(email, password);
       toast.success(`Signed in as ${user.name}`);
-      navigate(homeForRole(role), { replace: true });
+      navigate(homeForRole(user.role), { replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setBusy(false);
     }
@@ -60,25 +51,10 @@ export default function Login() {
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-2xl">Sign in</CardTitle>
-            <CardDescription>Choose the workflow you want to open.</CardDescription>
+            <CardDescription>Your role and dashboard are loaded from your account.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs
-              value={role}
-              onValueChange={(v) => {
-                setRole(v as Role);
-                setEmail(DEMO[v as Role].email);
-              }}
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="patient">Patient</TabsTrigger>
-                <TabsTrigger value="doctor">Doctor</TabsTrigger>
-                <TabsTrigger value="admin">Admin</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <p className="mt-3 text-xs text-muted-foreground">{DEMO[role].hint}</p>
-
-            <form onSubmit={submit} className="mt-5 space-y-4">
+            <form onSubmit={submit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -94,16 +70,13 @@ export default function Login() {
             </form>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              New patient?{" "}
+              New here?{" "}
               <Link to="/register" className="text-primary underline-offset-4 hover:underline">
-                Register here
+                Create an account
               </Link>
             </p>
           </CardContent>
         </Card>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Demo environment — any password works, no real records are stored.
-        </p>
       </motion.div>
     </div>
   );
