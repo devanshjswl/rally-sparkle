@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "remix-of-event-registration-page-template",
+      "version": "0.1.0",
+      "title": "Remix of Event Registration Page Template"
+    },
+    "tools": [
+      {
+        "name": "list_departments",
+        "title": "List departments",
+        "description": "List all hospital departments, including their operating hours, rooms, and current OPD load.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_doctors",
+        "title": "List doctors",
+        "description": "Search and filter doctors by name, specialization, department, and availability.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Optional text search across name, specialization, and department."
+            },
+            "departmentId": {
+              "type": "string",
+              "description": "Filter by department ID."
+            },
+            "availableOnly": {
+              "type": "boolean",
+              "description": "Only return currently available doctors."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_hospital_stats",
+        "title": "Get hospital stats",
+        "description": "Return a high-level snapshot of today's hospital operations: appointments, queue length, emergency load, and bed occupancy.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_emergencies",
+        "title": "List emergency cases",
+        "description": "Return the current emergency triage board with red, yellow, and green cases and their status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_doctor_queue",
+        "title": "Get doctor queue",
+        "description": "Return the live OPD queue for a specific doctor, including patient positions and estimated waiting times.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "doctorId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The doctor ID to fetch the queue for."
+            }
+          },
+          "required": [
+            "doctorId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "predict_waiting_time",
+        "title": "Predict waiting time",
+        "description": "Predict the remaining waiting time for a patient in a doctor's OPD queue using the AI waiting-time model.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "doctorId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Doctor ID whose queue the patient is in."
+            },
+            "appointmentId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Appointment ID of the patient."
+            }
+          },
+          "required": [
+            "doctorId",
+            "appointmentId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "book_appointment",
+        "title": "Book appointment",
+        "description": "Book a new OPD appointment for a patient with a specific doctor, date, and time slot.",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "patientId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Registered patient ID."
+            },
+            "patientName": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Patient display name."
+            },
+            "doctorId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Doctor ID to book with."
+            },
+            "date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Appointment date in YYYY-MM-DD format."
+            },
+            "slot": {
+              "type": "string",
+              "pattern": "^\\d{2}:\\d{2}$",
+              "description": "Appointment time slot in HH:mm format."
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Reason for the visit / symptoms."
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "normal",
+                "high",
+                "emergency"
+              ],
+              "description": "Optional triage priority."
+            }
+          },
+          "required": [
+            "patientId",
+            "patientName",
+            "doctorId",
+            "date",
+            "slot",
+            "reason"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
